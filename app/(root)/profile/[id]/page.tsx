@@ -51,7 +51,7 @@ const Page = async ({ params }: { params: { id: string } }) => {
           </TabsList>
           {profileTabs.map((tab) => (
             <TabsContent
-              key={`conten-${tab.label}`}
+              key={`content-${tab.label}`}
               value={tab.value}
               className="w-full text-light-1"
             >
