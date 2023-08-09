@@ -1,7 +1,7 @@
 import React from "react";
 import { currentUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
-import { fetchUser } from "@/lib/actions/user.actions";
+import { fetchUser, userRepliesCount } from "@/lib/actions/user.actions";
 import ProfileHeader from "@/components/shared/ProfileHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { profileTabs } from "@/constants";
@@ -16,6 +16,8 @@ const Page = async ({ params }: { params: { id: string } }) => {
 
   const userInfo = await fetchUser(params.id);
   if (!userInfo?.onboarded) redirect("/onboarding");
+
+  const repliesCount = userRepliesCount(userInfo.id);
 
   return (
     <section>
@@ -47,6 +49,11 @@ const Page = async ({ params }: { params: { id: string } }) => {
                     {userInfo.threads.length}
                   </p>
                 )}
+                {tab.label === "Replies" && (
+                  <p className="ml-1 rounded-sm bg-light-4 px-2 py-1 !text-tiny-medium text-light-2">
+                    {repliesCount}
+                  </p>
+                )}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -76,15 +83,17 @@ const Page = async ({ params }: { params: { id: string } }) => {
             value={profileTabs[2].value}
             className="w-full text-light-1"
           >
-            <article className="flex w-full flex-col rounded-xl bg-dark-2 p-7">
-              <div className="flex items-start justify-between">
-                <div className="flex w-full flex-1 flex-row gap-4">
-                  <div className="w-full">
-                    <p className="text-center">Not yet implemented</p>
+            <section className="mt-9 flex flex-col gap-10">
+              <article className="flex w-full flex-col rounded-xl bg-dark-2 p-7">
+                <div className="flex items-start justify-between">
+                  <div className="flex w-full flex-1 flex-row gap-4">
+                    <div className="w-full">
+                      <p className="text-center">Not yet implemented</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </article>
+              </article>
+            </section>
           </TabsContent>
         </Tabs>
       </div>

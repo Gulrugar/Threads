@@ -11,6 +11,7 @@ const likeSchema = new mongoose.Schema({
     ref: "Thread",
     required: true,
   },
+  createdAt: { type: Date, default: Date.now },
   liked: {
     type: Boolean,
     default: false,

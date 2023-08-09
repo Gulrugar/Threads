@@ -102,6 +102,29 @@ export async function fetchUserPosts(userId: string) {
   }
 }
 
+export async function userRepliesCount(userId: string) {
+  try {
+    connectToDB();
+
+    const user = await User.findOne({ id: userId });
+
+    const userThreads = await Thread.find({ author: user._id });
+
+    const childThreadIds = userThreads.reduce((acc, thread) => {
+      return acc.concat(thread.children);
+    }, []);
+
+    const totalRepliesCount = await Thread.countDocuments({
+      _id: { $in: childThreadIds },
+      author: { $ne: user._id },
+    });
+
+    return totalRepliesCount;
+  } catch (error: any) {
+    throw new Error(`Failed to fetch user replies count: ${error.message}`);
+  }
+}
+
 export async function fetchUserReplies(userId: string) {
   try {
     connectToDB();
@@ -133,7 +156,7 @@ export async function fetchUserReplies(userId: string) {
 
     return replies;
   } catch (error: any) {
-    throw new Error(`Failed to fetch user posts: ${error.message}`);
+    throw new Error(`Failed to fetch user replies: ${error.message}`);
   }
 }
 
@@ -202,36 +225,39 @@ export async function getActivity(userId: string) {
     const replies = await Thread.find({
       _id: { $in: childThreadIds },
       author: { $ne: userId },
-    })
-      .limit(20)
-      .populate({
-        path: "author",
-        model: User,
-        select: "name image _id",
-      });
-
-    const totalRepliesCount = await Thread.countDocuments({
-      _id: { $in: childThreadIds },
-      author: { $ne: userId },
+    }).populate({
+      path: "author",
+      model: User,
+      select: "name image _id",
     });
 
     const likes = await Like.find({
       thread: { $in: userThreads },
       user: { $ne: userId },
     })
-      .limit(20)
       .populate({
         path: "user",
         model: User,
         select: "name image _id",
+      })
+      .populate({
+        path: "thread",
+        model: Thread,
+        select: "text parentId",
+        populate: {
+          path: "author",
+          model: User,
+          select: "name image",
+        },
       });
 
-    const totalLikeCount = await Like.countDocuments({
-      thread: { $in: userThreads },
-      user: { $ne: userId },
-    });
+    // Combine the replies and likes arrays
+    const combinedResults = replies.concat(likes);
 
-    return { replies, totalRepliesCount, likes, totalLikeCount };
+    // Sort the combined array by createdAt in descending order
+    combinedResults.sort((a, b) => b.createdAt - a.createdAt);
+
+    return combinedResults.slice(0, 50);
   } catch (error: any) {
     throw new Error(`Failed to fetch activity: ${error.message}`);
   }
