@@ -22,7 +22,7 @@ const RightSidebar = async () => {
         <h3 className="text-heading4-medium text-light-1">
           Suggested Communities
         </h3>
-        <div className="mt-7 flex w-[350px] flex-col gap-9">
+        <div className="mt-7 flex w-[300px] flex-col gap-9">
           {suggestedCommunities.communities.length > 0 ? (
             <>
               {suggestedCommunities.communities.map((community) => (
@@ -45,7 +45,7 @@ const RightSidebar = async () => {
       </div>
       <div className="flex flex-1 flex-col justify-start">
         <h3 className="text-heading4-medium text-light-1">Suggested Users</h3>
-        <div className="mt-7 flex w-[350px] flex-col gap-10">
+        <div className="mt-7 flex w-[300px] flex-col gap-10">
           {suggestedUsers.users.length > 0 ? (
             <>
               {suggestedUsers.users.map((person) => (

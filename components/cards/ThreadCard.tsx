@@ -2,12 +2,23 @@ import { formatDateString } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import DeleteThread from "@/components/forms/DeleteThread";
+import LikeButton from "../LikeButton";
 
 interface Props {
   id: string;
   currentUserId: string;
+  userModelId: string;
   parentId: string | null;
   content: string;
+  likes: {
+    user: {
+      _id: string;
+    };
+    thread: {
+      _id: string;
+    };
+    liked: boolean;
+  }[];
   author: {
     id: string;
     name: string;
@@ -21,19 +32,31 @@ interface Props {
     };
   }[];
   isComment?: boolean;
+  linkToParent?: boolean;
 }
 
 const ThreadCard = ({
   id,
   currentUserId,
+  userModelId,
   parentId,
   content,
+  likes,
   author,
   community,
   createdAt,
   comments,
   isComment,
+  linkToParent,
 }: Props) => {
+  const isLiked = likes.find((like) => {
+    return (
+      like?.user?._id.toString() === JSON.parse(userModelId) &&
+      like.thread._id.toString() === id.toString()
+    );
+  })?.liked;
+
+  const numberLiked = likes.filter((like) => like.liked).length;
   return (
     <article
       className={`flex w-full flex-col rounded-xl ${
@@ -47,7 +70,8 @@ const ThreadCard = ({
               <Image
                 src={author.image}
                 alt="Profile"
-                fill
+                width={44}
+                height={44}
                 className="cursor-pointer rounded-full"
               />
             </Link>
@@ -65,21 +89,18 @@ const ThreadCard = ({
 
             <div className={`${isComment && "mb-10"} mt-5 flex flex-col gap-3`}>
               <div className="flex gap-3.5">
-                <Image
-                  src="/assets/heart-gray.svg"
-                  alt="heart"
-                  width={24}
-                  height={24}
-                  className="cursor-pointer object-contain"
-                  title="Like"
+                <LikeButton
+                  threadId={id.toString()}
+                  userId={userModelId}
+                  isLiked={isLiked || false}
                 />
-                <Link href={`/thread/${id}`}>
+                <Link href={`/thread/${linkToParent ? parentId : id}`}>
                   <Image
                     src="/assets/reply.svg"
                     alt="reply"
                     width={24}
                     height={24}
-                    className="cursor-pointer object-contain"
+                    className="cursor-pointer object-contain hover:scale-[1.1]"
                     title="Reply"
                   />
                 </Link>
@@ -89,7 +110,7 @@ const ThreadCard = ({
                   alt="repost"
                   width={24}
                   height={24}
-                  className="cursor-pointer object-contain"
+                  className="cursor-pointer object-contain hover:scale-[1.1]"
                   title="Repost"
                 /> */}
                 {/* TODO: Optional implement Share */}
@@ -98,10 +119,15 @@ const ThreadCard = ({
                   alt="share"
                   width={24}
                   height={24}
-                  className="cursor-pointer object-contain"
+                  className="cursor-pointer object-contain hover:scale-[1.1]"
                   title="Share"
                 /> */}
               </div>
+              {numberLiked > 0 && (
+                <p className="mt-1 text-subtle-medium text-gray-1">
+                  {numberLiked} {numberLiked === 1 ? "like" : "likes"}
+                </p>
+              )}
 
               {isComment && comments.length > 0 && (
                 <Link href={`/thread/${id}`}>

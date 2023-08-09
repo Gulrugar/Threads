@@ -6,6 +6,7 @@ import { connectToDB } from "../mongoose";
 import Thread from "../models/thread.model";
 import Community from "../models/community.model";
 import { FilterQuery, SortOrder } from "mongoose";
+import Like from "../models/like.model";
 
 interface Params {
   userId: string;
@@ -67,28 +68,70 @@ export async function fetchUserPosts(userId: string) {
   try {
     connectToDB();
 
-    const threads = await User.findOne({ id: userId }).populate({
-      path: "threads",
-      model: Thread,
-      populate: [
-        {
-          path: "community",
-          model: Community,
-          select: "_id id name image",
-        },
-        {
-          path: "children",
-          model: Thread,
-          populate: {
-            path: "author",
-            model: User,
-            select: "name image id",
+    const threads = await User.findOne({ id: userId })
+      .populate({
+        path: "threads",
+        model: Thread,
+        populate: [
+          {
+            path: "community",
+            model: Community,
+            select: "_id id name image",
           },
-        },
-      ],
-    });
+          {
+            path: "children",
+            model: Thread,
+            populate: {
+              path: "author",
+              model: User,
+              select: "name image id",
+            },
+          },
+          {
+            path: "likes",
+            model: Like,
+            select: "_id user thread liked",
+          },
+        ],
+      })
+      .exec();
 
     return threads;
+  } catch (error: any) {
+    throw new Error(`Failed to fetch user posts: ${error.message}`);
+  }
+}
+
+export async function fetchUserReplies(userId: string) {
+  try {
+    connectToDB();
+
+    const user = await User.findOne({ id: userId });
+
+    const userThreads = await Thread.find({ author: user._id });
+
+    const childThreadIds = userThreads.reduce((acc, thread) => {
+      return acc.concat(thread.children);
+    }, []);
+
+    const replies = await Thread.find({
+      _id: { $in: childThreadIds },
+      author: { $ne: user._id },
+    })
+      .populate({ path: "author", model: User })
+      .populate({ path: "community", model: Community })
+      .populate({
+        path: "children",
+        populate: {
+          path: "author",
+          model: User,
+          select: "_id name parentId image",
+        },
+      })
+      .populate({ path: "likes", model: Like, select: "_id user thread liked" })
+      .exec();
+
+    return replies;
   } catch (error: any) {
     throw new Error(`Failed to fetch user posts: ${error.message}`);
   }
@@ -159,13 +202,36 @@ export async function getActivity(userId: string) {
     const replies = await Thread.find({
       _id: { $in: childThreadIds },
       author: { $ne: userId },
-    }).populate({
-      path: "author",
-      model: User,
-      select: "name image _id",
+    })
+      .limit(20)
+      .populate({
+        path: "author",
+        model: User,
+        select: "name image _id",
+      });
+
+    const totalRepliesCount = await Thread.countDocuments({
+      _id: { $in: childThreadIds },
+      author: { $ne: userId },
     });
 
-    return replies;
+    const likes = await Like.find({
+      thread: { $in: userThreads },
+      user: { $ne: userId },
+    })
+      .limit(20)
+      .populate({
+        path: "user",
+        model: User,
+        select: "name image _id",
+      });
+
+    const totalLikeCount = await Like.countDocuments({
+      thread: { $in: userThreads },
+      user: { $ne: userId },
+    });
+
+    return { replies, totalRepliesCount, likes, totalLikeCount };
   } catch (error: any) {
     throw new Error(`Failed to fetch activity: ${error.message}`);
   }

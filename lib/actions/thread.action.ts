@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import Thread from "../models/thread.model";
+import Like from "../models/like.model";
 import User from "../models/user.model";
 import Community from "../models/community.model";
 import { connectToDB } from "../mongoose";
-import { connect } from "http2";
 
 interface Params {
   text: string;
@@ -70,8 +70,8 @@ export async function fetchThreads(pageNumber = 1, pageSize = 20) {
         model: User,
         select: "_id name parentId image",
       },
-    });
-
+    })
+    .populate({ path: "likes", model: Like, select: "_id user thread liked" });
   const totalThreadsCount = await Thread.countDocuments({
     parentId: { $in: [null, undefined] },
   });
@@ -105,13 +105,21 @@ export async function fetchThreadById(id: string) {
           {
             path: "children",
             model: Thread,
-            populate: {
-              path: "author",
-              model: User,
-              select: "_id id name parentId image",
-            },
+            populate: [
+              {
+                path: "author",
+                model: User,
+                select: "_id id name parentId image",
+              },
+            ],
           },
         ],
+      })
+      .populate({
+        path: "likes",
+        model: Like,
+        select: "_id user thread liked",
+        strictPopulate: false,
       })
       .exec();
 
@@ -134,9 +142,8 @@ export async function addCommentToThread({
   userId,
   path,
 }: AddCommentToThreadParams) {
-  connectToDB();
-
   try {
+    connectToDB();
     const originalThread = await Thread.findById(threadId);
 
     if (!originalThread) throw new Error("Thread not found");
@@ -176,7 +183,9 @@ export async function deleteThread(id: string, path: string): Promise<void> {
     connectToDB();
 
     // Find the thread to be deleted (the main thread)
-    const mainThread = await Thread.findById(id).populate("author community");
+    const mainThread = await Thread.findById(id).populate(
+      "author community likes"
+    );
 
     if (!mainThread) throw new Error("Thread not found");
 
@@ -204,6 +213,20 @@ export async function deleteThread(id: string, path: string): Promise<void> {
       ].filter((id) => id !== undefined)
     );
 
+    const descendantThreadsLikes = descendantThreads.map(
+      (thread) => thread.likes
+    );
+
+    const uniqueLikeIds = new Set(
+      [
+        ...descendantThreadsLikes.map((like) => like._id?.toString()),
+        ...mainThread.likes.map((like: any) => like._id?.toString()),
+      ].filter((id) => id !== undefined)
+    );
+
+    // Recursively delete all likes
+    await Like.deleteMany({ _id: { $in: Array.from(uniqueLikeIds) } });
+
     // Recursively delete child threads and their descendants
     await Thread.deleteMany({ _id: { $in: descendantThreadIds } });
 
@@ -222,5 +245,42 @@ export async function deleteThread(id: string, path: string): Promise<void> {
     revalidatePath(path);
   } catch (error: any) {
     throw new Error(`Error deleting thread: ${error.message}`);
+  }
+}
+
+interface likeThreadParams {
+  threadId: string;
+  userId: string;
+  path: string;
+}
+
+export async function fetchThreadLikes(threadId: string) {}
+
+export async function likeThread({ threadId, userId, path }: likeThreadParams) {
+  try {
+    connectToDB();
+    const originalThread = await Thread.findById(threadId);
+
+    if (!originalThread) throw new Error("Thread not found");
+
+    let originalLike = await Like.findOne({ thread: threadId, user: userId });
+
+    if (!originalLike) {
+      originalLike = new Like({
+        thread: threadId,
+        user: userId,
+      });
+
+      originalThread.likes.push(originalLike._id);
+      await originalThread.save();
+    }
+
+    originalLike.liked = !originalLike.liked;
+
+    const savedLike = await originalLike.save();
+
+    revalidatePath(path);
+  } catch (error: any) {
+    throw new Error(`Error liking thread: ${error.message}`);
   }
 }

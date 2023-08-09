@@ -2,6 +2,7 @@ import HomeEmpty from "@/components/HomeEmpty";
 import ThreadCard from "@/components/cards/ThreadCard";
 import Pagination from "@/components/shared/Pagination";
 import { fetchThreads } from "@/lib/actions/thread.action";
+import { fetchUser } from "@/lib/actions/user.actions";
 import { currentUser } from "@clerk/nextjs";
 
 export default async function Home({
@@ -11,6 +12,8 @@ export default async function Home({
 }) {
   const user = await currentUser();
   if (!user) return <HomeEmpty />;
+
+  const userInfo = await fetchUser(user.id);
 
   const result = await fetchThreads(
     searchParams?.page ? +searchParams.page : 1,
@@ -30,8 +33,10 @@ export default async function Home({
                 key={thread._id}
                 id={thread._id}
                 currentUserId={user.id}
+                userModelId={JSON.stringify(userInfo._id)}
                 parentId={thread.parentId}
                 content={thread.text}
+                likes={thread.likes}
                 author={thread.author}
                 community={thread.community}
                 createdAt={thread.createdAt}
