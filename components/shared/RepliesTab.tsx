@@ -1,23 +1,16 @@
-import { fetchUserReplies } from "@/lib/actions/user.actions";
-import { redirect } from "next/navigation";
-import React from "react";
 import ThreadCard from "../cards/ThreadCard";
 
 interface Props {
   currentUserId: string;
   userModelId: string;
-  accountId: string;
+  replies: any[];
 }
 
-const RepliesTab = async ({ currentUserId, accountId, userModelId }: Props) => {
-  const result = await fetchUserReplies(accountId);
-
-  if (!result) return redirect("/");
-
+const RepliesTab = async ({ currentUserId, userModelId, replies }: Props) => {
   return (
     <section className="mt-9 flex flex-col gap-10">
-      {result.length > 0 ? (
-        result.map((thread: any) => (
+      {replies.length > 0 ? (
+        replies.map((thread: any) => (
           <ThreadCard
             key={thread._id}
             id={thread._id}

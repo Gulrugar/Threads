@@ -47,6 +47,11 @@ const Page = async ({ params }: { params: { id: string } }) => {
                     {communityDetails?.threads?.length}
                   </p>
                 )}
+                {tab.label === "Members" && (
+                  <p className="ml-1 rounded-sm bg-light-4 px-2 py-1 !text-tiny-medium text-light-2">
+                    {communityDetails.members.length}
+                  </p>
+                )}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -74,12 +79,17 @@ const Page = async ({ params }: { params: { id: string } }) => {
             </section>
           </TabsContent>
           <TabsContent value="requests" className="w-full text-light-1">
-            <ThreadsTab
-              currentUserId={user.id}
-              userModelId={JSON.stringify(userInfo._id)}
-              accountId={communityDetails._id}
-              accountType="Community"
-            />
+            <section className="mt-9 flex flex-col gap-10">
+              <article className="flex w-full flex-col rounded-xl bg-dark-2 p-7">
+                <div className="flex items-start justify-between">
+                  <div className="flex w-full flex-1 flex-row gap-4">
+                    <div className="w-full">
+                      <p className="text-center">Not yet implemented</p>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </section>
           </TabsContent>
         </Tabs>
       </div>

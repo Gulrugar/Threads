@@ -1,7 +1,7 @@
 import React from "react";
 import { currentUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
-import { fetchUser, userRepliesCount } from "@/lib/actions/user.actions";
+import { fetchUser, fetchUserReplies } from "@/lib/actions/user.actions";
 import ProfileHeader from "@/components/shared/ProfileHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { profileTabs } from "@/constants";
@@ -17,7 +17,7 @@ const Page = async ({ params }: { params: { id: string } }) => {
   const userInfo = await fetchUser(params.id);
   if (!userInfo?.onboarded) redirect("/onboarding");
 
-  const repliesCount = userRepliesCount(userInfo.id);
+  const { replies, totalRepliesCount } = await fetchUserReplies(userInfo.id);
 
   return (
     <section>
@@ -51,7 +51,7 @@ const Page = async ({ params }: { params: { id: string } }) => {
                 )}
                 {tab.label === "Replies" && (
                   <p className="ml-1 rounded-sm bg-light-4 px-2 py-1 !text-tiny-medium text-light-2">
-                    {repliesCount}
+                    {totalRepliesCount}
                   </p>
                 )}
               </TabsTrigger>
@@ -76,7 +76,7 @@ const Page = async ({ params }: { params: { id: string } }) => {
             <RepliesTab
               currentUserId={user.id}
               userModelId={JSON.stringify(userInfo._id)}
-              accountId={userInfo.id}
+              replies={replies}
             />
           </TabsContent>
           <TabsContent

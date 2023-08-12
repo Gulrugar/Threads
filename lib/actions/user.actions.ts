@@ -102,29 +102,6 @@ export async function fetchUserPosts(userId: string) {
   }
 }
 
-export async function userRepliesCount(userId: string) {
-  try {
-    connectToDB();
-
-    const user = await User.findOne({ id: userId });
-
-    const userThreads = await Thread.find({ author: user._id });
-
-    const childThreadIds = userThreads.reduce((acc, thread) => {
-      return acc.concat(thread.children);
-    }, []);
-
-    const totalRepliesCount = await Thread.countDocuments({
-      _id: { $in: childThreadIds },
-      author: { $ne: user._id },
-    });
-
-    return totalRepliesCount;
-  } catch (error: any) {
-    throw new Error(`Failed to fetch user replies count: ${error.message}`);
-  }
-}
-
 export async function fetchUserReplies(userId: string) {
   try {
     connectToDB();
@@ -154,7 +131,12 @@ export async function fetchUserReplies(userId: string) {
       .populate({ path: "likes", model: Like, select: "_id user thread liked" })
       .exec();
 
-    return replies;
+    const totalRepliesCount = await Thread.countDocuments({
+      _id: { $in: childThreadIds },
+      author: { $ne: user._id },
+    });
+
+    return { replies, totalRepliesCount };
   } catch (error: any) {
     throw new Error(`Failed to fetch user replies: ${error.message}`);
   }
