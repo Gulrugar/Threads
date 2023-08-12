@@ -213,9 +213,9 @@ export async function deleteThread(id: string, path: string): Promise<void> {
       ].filter((id) => id !== undefined)
     );
 
-    const descendantThreadsLikes = descendantThreads.map(
-      (thread) => thread.likes
-    );
+    const descendantThreadsLikes = descendantThreads
+      .map((thread) => thread.likes)
+      .flat();
 
     const uniqueLikeIds = new Set(
       [

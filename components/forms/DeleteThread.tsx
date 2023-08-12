@@ -1,5 +1,4 @@
 "use client";
-// note: 2.read this file 3. implement DeleteThread in ThreadCard.tsx
 
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
