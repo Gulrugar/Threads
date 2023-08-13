@@ -105,23 +105,34 @@ export async function fetchThreadById(id: string) {
           {
             path: "children",
             model: Thread,
-            populate: [
-              {
-                path: "author",
-                model: User,
-                select: "_id id name parentId image",
-              },
-            ],
+            populate: {
+              path: "author",
+              model: User,
+              select: "_id id name parentId image",
+            },
+          },
+          {
+            path: "likes",
+            model: Like,
+            select: "_id thread liked",
+            populate: {
+              path: "user",
+              model: User,
+              select: "_id id name image",
+            },
           },
         ],
       })
       .populate({
         path: "likes",
         model: Like,
-        select: "_id user thread liked",
-        strictPopulate: false,
-      })
-      .exec();
+        select: "_id thread liked",
+        populate: {
+          path: "user",
+          model: User,
+          select: "_id id name image",
+        },
+      });
 
     return thread;
   } catch (error: any) {
@@ -254,11 +265,11 @@ interface likeThreadParams {
   path: string;
 }
 
-export async function fetchThreadLikes(threadId: string) {}
-
 export async function likeThread({ threadId, userId, path }: likeThreadParams) {
+  console.log("likeThread");
   try {
     connectToDB();
+    console.log("likeThread in try block");
     const originalThread = await Thread.findById(threadId);
 
     if (!originalThread) throw new Error("Thread not found");

@@ -17,6 +17,8 @@ const Page = async ({ params }: { params: { id: string } }) => {
 
   const thread = await fetchThreadById(params.id);
 
+  console.log(thread);
+
   return (
     <section className="relative">
       <div>
@@ -44,6 +46,7 @@ const Page = async ({ params }: { params: { id: string } }) => {
 
       <div className="mt-10">
         {thread.children.map((childItem: any) => {
+          console.log(childItem);
           return (
             <ThreadCard
               key={childItem._id}

@@ -49,6 +49,15 @@ const ThreadCard = ({
   isComment,
   linkToParent,
 }: Props) => {
+  // console.log("content", content.slice(0, 10));
+  // likes.forEach((like) => {
+  //   console.log(
+  //     "JSON.stringify(like, null, 2): ",
+  //     JSON.stringify(like, null, 2)
+  //   );
+  //   console.log(like?.user?._id);
+  // });
+
   const isLiked = likes.find((like) => {
     return (
       like?.user?._id.toString() === JSON.parse(userModelId) &&
